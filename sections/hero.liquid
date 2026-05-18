@@ -1,0 +1,500 @@
+<link rel="stylesheet" href="{{ 'component-rte.css' | asset_url }}" media="print" onload="this.media='all'">
+{{ 'section-hero.css' | asset_url | stylesheet_tag }}
+<noscript>{{ 'component-rte.css' | asset_url | stylesheet_tag }}</noscript>
+
+{%- style -%}
+  .hero-bg-{{ section.id }} {
+    {% if section.settings.section_background_color != blank %}
+      background-color: {{ section.settings.section_background_color }};
+    {% endif %}
+    {% if section.settings.section_background_image != blank %}
+      background-image: url({{ section.settings.section_background_image | image_url: width: 2400 }});
+    {% endif %}
+  }
+
+  .section-{{ section.id }}-padding {
+    padding-top: {{ section.settings.mobile_padding_top }}px;
+    padding-bottom: {{ section.settings.mobile_padding_bottom }}px;
+  }
+
+  .hero-content-{{ section.id }} {
+    --hero-content-width: {{ section.settings.content_width }}px;
+  }
+
+  @media screen and (min-width: 750px) {
+    .section-{{ section.id }}-padding {
+      padding-top: {{ section.settings.padding_top }}px;
+      padding-bottom: {{ section.settings.padding_bottom }}px;
+    }
+  }
+{%- endstyle -%}
+
+{%- liquid
+  assign container = 'container'
+  if section.settings.container == 'container-fluid'
+    assign container = 'container-fluid'
+  endif
+-%}
+
+<div class="hero-section hero-bg-{{ section.id }} section-{{ section.id }}-padding section--top-space-{{ section.id }} color-{{ section.settings.color_scheme }} gradient">
+  <div class="{{ container }}">
+    <div class="hero-section__inner">
+      <div class="hero-section__content hero-content-{{ section.id }} text-{{ section.settings.alignment }} mobile-text-{{ section.settings.mobile_alignment }}{% if settings.animations_reveal_on_scroll %} scroll-trigger animate--slide-in{% endif %}">
+        {%- assign icon_text_open = false -%}
+
+        {%- for block in section.blocks -%}
+          {%- if block.type != 'icon_text' and icon_text_open -%}
+            </div>
+            {%- assign icon_text_open = false -%}
+          {%- endif -%}
+
+          {%- case block.type -%}
+            {%- when 'heading' -%}
+              {%- liquid
+                assign heading_tag = block.settings.heading_tag | default: 'h1'
+                assign heading_size_desktop = block.settings.heading_size_desktop | default: 56
+                assign heading_size_mobile = block.settings.heading_size_mobile | default: 36
+              -%}
+              {%- if block.settings.heading != blank -%}
+                <{{ heading_tag }}
+                  class="hero-section__heading"
+                  style="--hero-heading-size-desktop: {{ heading_size_desktop }}px; --hero-heading-size-mobile: {{ heading_size_mobile }}px;"
+                  {{ block.shopify_attributes }}
+                >
+                  {{ block.settings.heading | replace: 'p>', 'span>' }}
+                </{{ heading_tag }}>
+              {%- endif -%}
+
+            {%- when 'text' -%}
+              {%- if block.settings.text != blank -%}
+                <div class="hero-section__text rte" {{ block.shopify_attributes }}>
+                  {{ block.settings.text }}
+                </div>
+              {%- endif -%}
+
+            {%- when 'icon_text' -%}
+              {%- unless icon_text_open -%}
+                <div class="hero-section__icon-list">
+                {%- assign icon_text_open = true -%}
+              {%- endunless -%}
+              <div class="hero-section__icon-text" style="--hero-icon-size: {{ block.settings.icon_size }}px;" {{ block.shopify_attributes }}>
+                {%- if block.settings.icon_image != blank or block.settings.icon_svg != blank -%}
+                  <span class="hero-section__icon">
+                    {%- if block.settings.icon_image != blank -%}
+                      <img
+                        src="{{ block.settings.icon_image | image_url: width: 120 }}"
+                        alt="{{ block.settings.icon_image.alt | escape }}"
+                        width="60"
+                        height="{{ 60 | divided_by: block.settings.icon_image.aspect_ratio | ceil }}"
+                        loading="lazy"
+                      >
+                    {%- else -%}
+                      {{ block.settings.icon_svg }}
+                    {%- endif -%}
+                  </span>
+                {%- endif -%}
+                {%- if block.settings.text != blank -%}
+                  <p class="hero-section__icon-label">{{ block.settings.text }}</p>
+                {%- endif -%}
+              </div>
+
+            {%- when 'button' -%}
+              {%- if block.settings.button_label != blank -%}
+                {%- liquid
+                  assign button_class = 'button button--primary'
+                  if block.settings.button_style == 'secondary'
+                    assign button_class = 'button button--secondary'
+                  elsif block.settings.button_style == 'link'
+                    assign button_class = 'link'
+                  endif
+                -%}
+                <div class="hero-section__buttons" {{ block.shopify_attributes }}>
+                  <a
+                    {% if block.settings.button_link == blank %}
+                      role="link" aria-disabled="true"
+                    {% else %}
+                      href="{{ block.settings.button_link }}"
+                    {% endif %}
+                    class="{{ button_class }}{% unless block.settings.button_style == 'link' %} button--{{ block.settings.button_size }}{% endunless %}{% if block.settings.button_icon %} button--with-icon{% endif %}"
+                  >
+                    {{ block.settings.button_label | escape }}
+                    {%- if block.settings.button_icon -%}
+                      <span class="button--icon button--icon-right">{% render 'icon-chevron-right' %}</span>
+                    {%- endif -%}
+                  </a>
+                </div>
+              {%- endif -%}
+          {%- endcase -%}
+        {%- endfor -%}
+
+        {%- if icon_text_open -%}
+          </div>
+        {%- endif -%}
+      </div>
+    </div>
+  </div>
+</div>
+
+{% schema %}
+{
+  "name": "Hero",
+  "tag": "section",
+  "settings": [
+    {
+      "type": "select",
+      "id": "container",
+      "label": "Page width",
+      "default": "container",
+      "options": [
+        {
+          "value": "container",
+          "label": "Boxed"
+        },
+        {
+          "value": "container-fluid",
+          "label": "Full width"
+        }
+      ]
+    },
+    {
+      "type": "select",
+      "id": "alignment",
+      "label": "Desktop content alignment",
+      "options": [
+        {
+          "value": "left",
+          "label": "Left"
+        },
+        {
+          "value": "center",
+          "label": "Center"
+        },
+        {
+          "value": "right",
+          "label": "Right"
+        }
+      ],
+      "default": "left"
+    },
+    {
+      "type": "select",
+      "id": "mobile_alignment",
+      "label": "Mobile content alignment",
+      "options": [
+        {
+          "value": "left",
+          "label": "Left"
+        },
+        {
+          "value": "center",
+          "label": "Center"
+        },
+        {
+          "value": "right",
+          "label": "Right"
+        }
+      ],
+      "default": "center"
+    },
+    {
+      "type": "range",
+      "id": "content_width",
+      "min": 360,
+      "max": 1200,
+      "step": 20,
+      "unit": "px",
+      "label": "Content width",
+      "default": 720
+    },
+    {
+      "type": "header",
+      "content": "Background"
+    },
+    {
+      "type": "color_scheme",
+      "id": "color_scheme",
+      "label": "t:sections.all.colors.label",
+      "default": "background-1"
+    },
+    {
+      "type": "color",
+      "id": "section_background_color",
+      "label": "Background color"
+    },
+    {
+      "type": "image_picker",
+      "id": "section_background_image",
+      "label": "Background image"
+    },
+    {
+      "type": "header",
+      "content": "Section padding"
+    },
+    {
+      "type": "paragraph",
+      "content": "Desktop"
+    },
+    {
+      "type": "range",
+      "id": "padding_top",
+      "min": 0,
+      "max": 200,
+      "step": 5,
+      "unit": "px",
+      "label": "Padding top",
+      "default": 60
+    },
+    {
+      "type": "range",
+      "id": "padding_bottom",
+      "min": 0,
+      "max": 200,
+      "step": 5,
+      "unit": "px",
+      "label": "Padding bottom",
+      "default": 60
+    },
+    {
+      "type": "paragraph",
+      "content": "Mobile"
+    },
+    {
+      "type": "range",
+      "id": "mobile_padding_top",
+      "min": 0,
+      "max": 200,
+      "step": 5,
+      "unit": "px",
+      "label": "Padding top",
+      "default": 40
+    },
+    {
+      "type": "range",
+      "id": "mobile_padding_bottom",
+      "min": 0,
+      "max": 200,
+      "step": 5,
+      "unit": "px",
+      "label": "Padding bottom",
+      "default": 40
+    }
+  ],
+  "blocks": [
+    {
+      "type": "heading",
+      "name": "Heading text",
+      "limit": 1,
+      "settings": [
+        {
+          "type": "inline_richtext",
+          "id": "heading",
+          "label": "Heading",
+          "default": "Hero heading"
+        },
+        {
+          "type": "select",
+          "id": "heading_tag",
+          "label": "Heading tag",
+          "options": [
+            {
+              "value": "h1",
+              "label": "H1"
+            },
+            {
+              "value": "h2",
+              "label": "H2"
+            },
+            {
+              "value": "h3",
+              "label": "H3"
+            },
+            {
+              "value": "h4",
+              "label": "H4"
+            },
+            {
+              "value": "h5",
+              "label": "H5"
+            },
+            {
+              "value": "h6",
+              "label": "H6"
+            },
+            {
+              "value": "div",
+              "label": "Div"
+            },
+            {
+              "value": "p",
+              "label": "P"
+            },
+            {
+              "value": "span",
+              "label": "Span"
+            }
+          ],
+          "default": "h1"
+        },
+        {
+          "type": "range",
+          "id": "heading_size_desktop",
+          "min": 24,
+          "max": 120,
+          "step": 1,
+          "unit": "px",
+          "label": "Heading font size desktop",
+          "default": 56
+        },
+        {
+          "type": "range",
+          "id": "heading_size_mobile",
+          "min": 20,
+          "max": 80,
+          "step": 1,
+          "unit": "px",
+          "label": "Heading font size mobile",
+          "default": 36
+        }
+      ]
+    },
+    {
+      "type": "text",
+      "name": "Text",
+      "limit": 1,
+      "settings": [
+        {
+          "type": "richtext",
+          "id": "text",
+          "label": "Text",
+          "default": "<p>Add supporting text for this hero section.</p>"
+        }
+      ]
+    },
+    {
+      "type": "icon_text",
+      "name": "Icon text",
+      "limit": 4,
+      "settings": [
+        {
+          "type": "textarea",
+          "id": "icon_svg",
+          "label": "SVG icon"
+        },
+        {
+          "type": "image_picker",
+          "id": "icon_image",
+          "label": "Image icon"
+        },
+        {
+          "type": "range",
+          "id": "icon_size",
+          "min": 12,
+          "max": 80,
+          "step": 1,
+          "unit": "px",
+          "label": "Icon size",
+          "default": 24
+        },
+        {
+          "type": "text",
+          "id": "text",
+          "label": "Text",
+          "default": "Icon text"
+        }
+      ]
+    },
+    {
+      "type": "button",
+      "name": "Button",
+      "limit": 2,
+      "settings": [
+        {
+          "type": "text",
+          "id": "button_label",
+          "label": "Button label",
+          "default": "Shop now"
+        },
+        {
+          "type": "url",
+          "id": "button_link",
+          "label": "Button link"
+        },
+        {
+          "type": "select",
+          "id": "button_style",
+          "label": "Button style",
+          "options": [
+            {
+              "value": "primary",
+              "label": "Primary"
+            },
+            {
+              "value": "secondary",
+              "label": "Secondary"
+            },
+            {
+              "value": "link",
+              "label": "Link"
+            }
+          ],
+          "default": "primary"
+        },
+        {
+          "type": "select",
+          "id": "button_size",
+          "label": "Button size",
+          "options": [
+            {
+              "value": "small",
+              "label": "Small"
+            },
+            {
+              "value": "medium",
+              "label": "Medium"
+            },
+            {
+              "value": "large",
+              "label": "Large"
+            }
+          ],
+          "default": "medium"
+        },
+        {
+          "type": "checkbox",
+          "id": "button_icon",
+          "label": "Show button icon",
+          "default": true
+        }
+      ]
+    }
+  ],
+  "presets": [
+    {
+      "name": "Hero",
+      "blocks": [
+        {
+          "type": "heading"
+        },
+        {
+          "type": "text"
+        },
+        {
+          "type": "icon_text"
+        },
+        {
+          "type": "icon_text"
+        },
+        {
+          "type": "icon_text"
+        },
+        {
+          "type": "icon_text"
+        },
+        {
+          "type": "button"
+        }
+      ]
+    }
+  ]
+}
+{% endschema %}
